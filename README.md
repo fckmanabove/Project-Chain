@@ -1,46 +1,43 @@
 # Project-Chain (ProChain) ⛓️
 
-**ProChain** — это высокопроизводительная система управления портфелем проектов автоматизации. Полная миграция MVP из Excel/VBA в реактивную веб-среду с использованием метода критического пути (CPM), версионности планов и ИИ-аналитики.
+**ProChain** — высокопроизводительная система управления портфелем проектов автоматизации. Полная миграция MVP из Excel/VBA в реактивную веб-среду с использованием метода критического пути (CPM), версионности планов (Baseline) и ИИ-аналитики.
 
 ## 🏗 Архитектура системы
 
 ### 1. Логическая схема процессов (Mermaid)
 ```mermaid
 graph TD
-    A[Synology Drive / P-00x] -->|Smart Table Mapping| B(Migration Service)
+    A[Synology Drive / P-00x] -->|Smart Table: Tbl_Tasks, Tbl_Diary| B(Migration Service)
     B --> C[(PostgreSQL 16 + pgvector)]
-    D[Diary Input/Logs] -->|Reactive Sync| E{FastAPI Core}
-    E -->|Update Tasks| C
+    D[Diary Input/Logs] -->|WBS Key Link: 1.1, 2.4.1| E{FastAPI Core}
+    E -->|Update Fact Dates| C
     E -->|Manual Trigger| F[CPM Engine]
-    F -->|Recalculate Chain| C
-    C -->|Version Snapshot| G[Version Control Service]
-    G -->|Embeddings| H[(Vector Store: History + Forecast)]
+    F -->|Baseline vs Actuals| C
+    C -->|Daily Snapshot| G[Celery Worker]
+    G -->|Embeddings: Numbers + Context| H[(Vector Store)]
     I[User/Management] -->|Natural Language| J[ИИ-аналитик]
     J -->|Semantic Search| H
-    J -->|Insights/Reasons| I
+    J -->|Insights| I
 ```
 
 ## 🚀 Ключевые бизнес-правила (MVP DNA)
 
-### 1. Движок расчетов и Версионность
-- **Manual Trigger:** Расчет графа инициируется пользователем вручную.
-- **Project Gantt (Individual):** В каждом паспорте проекта реализован собственный интерактивный Гантт, синхронизированный с метаданными этого проекта.
-- **Versioning & Baselines:** Система поддерживает сохранение версий (снапшотов) Ганта. Это позволяет сравнивать текущее состояние с "Базовым планом" (Baseline) и видеть историю сдвигов.
+### 1. Движок расчетов и Версионность (Baseline)
+- **Baseline Logic:** Плановые даты из Excel (`Плановая дата начала/окончания`) фиксируются как **Базовый план**. Все изменения фиксируются в полях **Фактических дат**.
+- **CPM Engine:** Расчет отклонений (финиш факта минус финиш плана). Ручной пересчет графа.
+- **WBS-кодирование:** Использование иерархических ключей (`1.1`, `1.2.1`) для связи задач, дневников и логов дефектов.
 
-### 2. Система идентификации и маппинга
-- **Smart Migration:** Идентификация данных по алгоритму имен Умных таблиц (`Tbl_Project_*`, `Tbl_Tasks_*`).
-- **Двухуровневый RACI:** Разделение ролей проекта (Куратор/Архитектор) и локальных исполнителей задач.
-- **UX Reference:** Интерфейсы веб-приложения проектируются на основе "отрисованных интерфейсов" из Excel MVP для сохранения преемственности пользовательского опыта.
+### 2. Паспорт проекта и KPI
+- **Единый Паспорт:** Объединение `Tbl_Min_Passport` и `Tbl_Project_Passport`.
+- **Целевые метрики:** Контроль жестких KPI (Производительность 3750 дет/смену, КИМ 86.1%, Брак < 0.1%).
+- **Smart Mapping:** Поиск таблиц по префиксам `Tbl_*` и автоматическое сопоставление синонимов заголовков (Этап = Задача).
 
-### 3. Реактивные блокировки (Data Integrity)
-- **Data Lock:** Если по задаче зафиксирован факт (`hours_worked > 0`), поля планирования блокируются.
-- **Live Lock:** Redis-блокировка ячеек (30 сек) + WebSocket трансляция.
-
-### 4. ИИ-аналитика (History-Aware)
-- **Контекстные снапшоты:** ИИ сопоставляет версии графиков и объясняет разницу между "Планом" и "Фактом" на основе текстовых записей в дневниках.
+### 3. Реактивные блокировки и Интерфейс
+- **Data Lock:** Если заполнены «Фактические даты», поля «Плановых дат» блокируются.
+- **UI Vibe:** Визуализация Ганта наследует цветовую схему Excel (План — Синий/Серый, Факт — Зеленый).
+- **RACI:** Фильтрация задач по колонке "Ответственный" (ФИО из P-000).
 
 ## 🛠 Технологический стек
-- **Backend:** FastAPI, SQLAlchemy 2.0, Celery.
-- **Data:** PostgreSQL 16, Redis 7, Synology Drive API.
-- **Frontend:** React, Tailwind CSS, SVAR/DHTMLX Gantt (Прототип: UI из Excel MVP).
-
+- **Backend:** FastAPI, SQLAlchemy 2.0.
+- **Data:** PostgreSQL 16 (pgvector), Redis 7, Synology Drive API.
+- **Frontend:** React, Tailwind CSS, SVAR Gantt (Custom Theme: Excel Style).
