@@ -1,175 +1,110 @@
-# 📊 Project-Chain (ProChain): Система Управления Портфелем Проектов
+# Project-Chain (ProChain) ⛓️
 
-**Project-Chain** — высокопроизводительный веб-сервис для централизованного контроля портфеля проектов автоматизации фабрики, управления логическими зависимостями и предрасчета критического пути. 
+**ProChain** — это высокопроизводительная система управления портфелем проектов автоматизации. Система представляет собой полную миграцию сложной экосистемы Excel/VBA MVP в реактивную веб-среду с использованием математической модели сетевого планирования (CPM) и ИИ-аналитики.
 
-Система разработана для миграции данных из локальных папок MVP-архива (содержащих файлы `Проект Р-ХХХ.xlsx` и `РХХХ Дневник.xlsx`) в единую веб-среду, оптимизированную для менеджмента и последующего анализа ИИ-агентом.
+## 🏗 Архитектура системы
 
----
-
-## 🏗️ Архитектура системы & Кэширование данных (Data Flow)
-
-Главный инженерный принцип системы: **Нулевой расчет на лету при построении диаграммы Ганта**. График справа — это Read-Only рендер, который мгновенно отрисовывается из предварительно собранных ключей и дерева связей, хранящихся в кэше базы данных.
-
+### 1. Логическая схема процессов (Mermaid)
 ```mermaid
 graph TD
-    UI[Frontend: React SPA / Таблица + Гант] -- 1. Изменение дат в таблице --> Core
-
-    subgraph PROCHAIN_CORE [Рабочий контур Project-Chain Core]
-        Core[prochain-core-api: FastAPI] <--> |2. Захват / Проверка блокировок| Redis[(Redis 7)]
-        Core <--> |3. Хранение WBS и Паспортов| PG[(PostgreSQL 16)]
-        
-        Core -- 4. Асинхронный gRPC запрос при изменении дат --> Calc[prochain-calc-engine: networkx]
-        Calc -- 5. CPM-расчет графа и критического пути --> Core
-        Core -- 6. Запись собранных ключей --> CacheTable[(gantt_render_cache)]
-    end
-
-    CacheTable -- Fast Read: Мгновенная отрисовка дерева Ганта --> UI
-
-    PG -- 7. Периодический экспорт дистиллированных JSON-пакетов --> S3[(MinIO / S3 Storage)]
-
-    subgraph AI_CONTOUR [Изолированный контур ИИ-агента]
-        S3 --> AI[prochain-ai-rag: LangChain / Vector DB]
-        AI <--> |Контекстные ответы по истории снапшотов| TG[Интерфейс: Telegram-бот для Бати]
-    end
-
-    style UI fill:#61dafb,stroke:#333,stroke-width:2px,color:#000
-    style PROCHAIN_CORE fill:#e8f5e9,stroke:#2e7d32,stroke-width:2px
-    style AI_CONTOUR fill:#fff3e0,stroke:#ef6c00,stroke-width:2px
-    style PG fill:#336791,color:#fff
-    style Redis fill:#d82c20,color:#fff
-    style S3 fill:#da1f3d,color:#fff
-    style CacheTable fill:#ffeb3b,stroke:#fbc02d,stroke-width:2px,color:#000
+    A[Excel Archive/P-00x] -->|Legacy Parser| B(Migration Service)
+    B --> C[(PostgreSQL 16 + pgvector)]
+    D[Diary Input/Logs] -->|Reactive Sync| E{FastAPI Core}
+    E -->|Update Tasks| C
+    E -->|Trigger| F[CPM Engine]
+    F -->|Recalculate Chain| C
+    C -->|Daily Snapshot| G[Celery Worker]
+    G -->|Embeddings| H[(Vector Store)]
+    I[User/Management] -->|Natural Language| J[AI Agent: Батя-контроль]
+    J -->|Semantic Search| H
+    J -->|Insights/Reasons| I
 ```
 
----
-
-## 🔒 UX-Взаимодействие: Табличная правка и Живые Блокировки
-
-Диаграмма Ганта справа является нередактируемой (Read-Only). Изменение любых плановых/фактических сроков, длительностей и ответственных происходит исключительно через инлайн-редактирование ячеек в табличной части слева. 
-
-### 🔄 Жизненный цикл блокировки строки и перерисовки Ганта:
-
-1. **Захват ячейки:** Когда `Пользователь А` дважды кликает на ячейку даты или прогресса задачи в левой части экрана, фронтенд шлет в WebSocket сигнал:
-   ```json
-   { "action": "lock", "task_id": "task-uuid-123" }
-   ```
-2. **Атомарный лок в оперативной памяти:** Сервис `prochain-core-api` резервирует строку в Redis:
-   ```redis
-   SET lock:task:task-uuid-123 "user_a_id" NX EX 300
-   ```
-3. **Блокировка у остальных:** Всем активным пользователям проекта улетает WebSocket-событие `task_locked`. У `Пользователя Б` вся строка в таблице и полоса на Ганте моментально окрашиваются в матово-серый цвет 🔒 с подсказкой *«Редактирует Климов А.Н.»*.
-4. **Сохранение и пересчет:** `Пользователь А` нажимает `Enter`. `core-api` записывает дату в Postgres и асинхронно дергает `calc-engine` по gRPC. Движок на базе `networkx` пересчитывает граф связей, определяет сдвиги зависимых задач и обновляет таблицу кэша `gantt_render_cache`.
-5. **Мгновенное обновление экрана:** Модуль очищает ключ блокировки в Redis. Все пользователи получают WebSocket-сигнал `task_unlocked` вместе с обновленным JSON-деревом кэша. Полоски Ганта на экранах всех участников плавно перерисовываются под новые даты без перезагрузки страницы.
-
----
-
-## 🗄️ Реляционная структура данных (Storage Layer)
-
-Схема таблиц в PostgreSQL адаптирована под структуру папок архива и обеспечивает сборку ключей на этапе импорта.
-
-### 📁 Маппинг бандлов папок проектов:
-*   Файлы **`Проект Р-ХХХ.xlsx`** (Листы: *Минимальный паспорт, Паспорт проекта, План-график*) \(\rightarrow\) таблицы `projects` и `tasks`.
-*   Файлы **`РХХХ Дневник.xlsx`** (Листы: *Дневник реализации, Протокол встречи*) \(\rightarrow\) таблица `project_journals`.
-
-<details>
-<summary><b>🗺️ Схема ключевых таблиц PostgreSQL</b></summary>
-
-```sql
-CREATE TABLE projects (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    project_code VARCHAR(50) UNIQUE NOT NULL, 
-    title VARCHAR(255) NOT NULL,              
-    description TEXT,                          
-    business_problem TEXT,                 
-    target_goal TEXT,                      
-    expected_result TEXT,                  
-    stage VARCHAR(100),                       
-    mgmt_status VARCHAR(100),                 
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
-);
-
-CREATE TABLE tasks (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    project_id UUID REFERENCES projects(id) ON DELETE CASCADE,
-    wbs_code VARCHAR(50) NOT NULL,            
-    phase VARCHAR(100),                       
-    title VARCHAR(255) NOT NULL,              
-    description TEXT,
-    expected_result TEXT,
-    responsible VARCHAR(255),                 
-    resources TEXT,                           
-    plan_start_date DATE,
-    plan_duration_days INT,
-    plan_end_date DATE,
-    fact_start_date DATE,
-    fact_duration_days INT,
-    fact_end_date DATE,
-    status VARCHAR(50),                       
-    progress_percent INT DEFAULT 0,
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
-);
-
-CREATE TABLE project_journals (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    project_id UUID REFERENCES projects(id) ON DELETE CASCADE,
-    wbs_code VARCHAR(50),                     
-    category CHAR(1),                         
-    event_date DATE,
-    location_zone VARCHAR(255),               
-    task_title TEXT,                          
-    physical_action TEXT,                     
-    business_reason TEXT,                     
-    responsible VARCHAR(255),
-    deadline DATE,
-    status VARCHAR(100),                      
-    source_origin VARCHAR(255)                
-);
-
-CREATE TABLE gantt_render_cache (
-    project_id UUID PRIMARY KEY REFERENCES projects(id) ON DELETE CASCADE,
-    wbs_tree_json JSONB NOT NULL,             
-    gantt_timeline_json JSONB NOT NULL,       
-    critical_path_keys TEXT[],                
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
-);
+### 2. Реляционная структура данных (ER Diagram)
+```mermaid
+erDiagram
+    PROJECT ||--o{ TASK : "contains"
+    TASK ||--o{ DEPENDENCY : "predecessor_of"
+    TASK ||--o{ DIARY_ENTRY : "logs"
+    TASK ||--o{ OPERATIONAL_ISSUE : "has_problems"
+    TASK ||--o{ TASK_SNAPSHOT : "history"
+    PROJECT {
+        string id "PRJ-XXX / P-XXX"
+        string name
+        date planned_finish
+        string target_metric
+    }
+    TASK {
+        string id "TSK-XXXX / MS-XXXX"
+        int duration
+        int remaining_duration
+        date es "Early Start"
+        date lf "Late Finish"
+        int slack "Reserve"
+        boolean is_critical
+        string location_tag
+    }
+    OPERATIONAL_ISSUE {
+        string category "A, B, C, F"
+        text issue_description
+        string technical_issue_class
+    }
 ```
-
-</details>
-
----
-
-## ⚙️ Функционал микросервисов бэкенда (Python / FastAPI)
-
-### 1️⃣ Сервис `prochain-core-api`
-*   **Сборщик ключей и Кэш-Менеджер:** При открытии проекта фронтендом вычитывает предрассчитанные JSONB-структуры из таблицы `gantt_render_cache`, обеспечивая загрузку экрана за доли секунды.
-*   **WebSocket Стейт-Машина:** Отвечает за контроль пула активных пользователей и атомарный захват ячеек в Redis при инлайн-редактировании.
-*   **Фоновый архивный парсер:** На базе `openpyxl`. Обрабатывает ручную загрузку папок с проектами. Сверяет `updated_at`. Если данные на сайте новее — запись из файла пропускается, а событие фиксируется в системных логах синхронизации.
-
-### 2️⃣ Сервис `prochain-calc-engine`
-*   Изолированный математический сервис на Python. Взаимодействует с `core-api` через быстрые **gRPC**-контракты.
-*   При триггере обновления дат в таблице принимает плоский массив связей, строит направленный ациклический граф (DAG) проекта в библиотеке **`networkx`**.
-*   **Алгоритм CPM (Critical Path Method):** Просчитывает временные резервы (Total Float). Задачи с нулевым резервом помечаются флагом критического пути, сервис собирает новое дерево отображения и перезаписывает `gantt_render_cache`.
-
----
-
-## 🤖 Контур Искусственного Интеллекта (Изолированный RAG)
-
-**ИИ-агент полностью отрезан от сетевого доступа к PostgreSQL рабочего веб-сервиса.** 
-
-*   **Конвейер данных:** По расписанию или кнопке `Snapshot Service` внутри `core-api` выгружает дистиллированные, очищенные от технической инфы JSON-пакеты (карточки проектов со всей хронологией дневников и критических путей) в закрытый бакет **MinIO / S3**.
-*   **Логика RAG:** Сервис `prochain-ai-rag` (LangChain + Vector DB) индексирует эти файлы. 
-*   **Интерфейс Бати (No UI):** Доступ к ИИ-аналитике реализован исключительно через **Telegram-бота**. Батя прямо с телефона может наговорить голосом: *«Посмотри дневники по Липецку за прошлую неделю и скажи, какие технические проблемы сдвинули критический путь?»*. ИИ делает семантический поиск по накопленным снапшотам, сопоставляет физические действия из дневника и выдает емкую выжимку.
-
----
 
 ## 📂 Структура репозитория
-
 ```text
-ProChain/
-├── docs/                  # Системная документация, схемы данных и ТЗ
-├── frontend/              # React SPA (Таблица, Read-Only Гант, Zustand, WebSockets)
-├── core-api/              # FastAPI: Менеджер кэша Ганта, Excel-парсер, WebSocket-сервис locks
-├── calc-engine/           # FastAPI / gRPC: Математический расчет графов на networkx
-├── proto/                 # Контракты межсервисного взаимодействия (.proto файлы)
-└── docker-compose.yml     # Скрипт развертывания инфраструктуры (Postgres, Redis, MinIO)
+project-chain/
+├── backend/                # Python / FastAPI
+│   ├── app/
+│   │   ├── api/            # Эндпоинты (Gantt, Diary, Analytics)
+│   │   ├── core/           # Движок CPM и производственный календарь
+│   │   ├── models/         # Модели SQLAlchemy (Валидация ID через Regex)
+│   │   ├── services/       # AI Агент и логика снапшотов
+│   │   └── crud/           # Логика блокировок и CRUD
+│   ├── parser/             # Инструмент миграции из ProjectArchive
+│   └── alembic/            # Миграции базы данных
+├── frontend/               # React / TypeScript
+│   ├── src/
+│   │   ├── components/     # Интерактивный Гантт, Формы дневников
+│   │   ├── hooks/          # WebSocket (Live Cell Locking)
+│   │   └── store/          # Состояние (Zustand)
+├── ai_agent/               # Логика LangChain и векторный поиск
+├── docker-compose.yml      # Infra: Postgres, Redis, RabbitMQ, pgvector
+└── data_archive/           # Входящие данные (Excel/XLSM)
 ```
+
+## 🚀 Ключевые бизнес-правила (MVP DNA)
+
+### 1. Движок расчетов (CPM Engine)
+- **Алгоритм:** Полная реализация Forward/Backward Pass. Определение критического пути (Slack = 0).
+- **Производственный календарь:** Кастомная функция `get_next_working_day`. Пропуск выходных и праздников из `holiday_calendar`.
+- **Вехи (Milestones):** Задачи с `duration = 0`. Дата вехи привязана к финишу предшествующей цепочки.
+
+### 2. Система идентификации и связей
+- **Жесткие ключи:** 
+    - Проекты: `^PRJ-[0-9]{3}$`
+    - Задачи: `^TSK-[0-9]{4}$`
+    - Вехи: `^MS-[0-9]{4}$`
+- **Integrity:** Связь данных в Ганте и Дневниках идет исключительно по ID. Текстовое переименование задачи не разрывает связь.
+
+### 3. Реактивные блокировки (Data Integrity)
+- **Data Lock:** Если в `diary_entries` или `operational_issues` по задаче зафиксирован факт (`hours_worked > 0`), поля `planned_start` и `dependencies` в Ганте блокируются для ручного изменения.
+- **Live Lock (UX):** Использование Redis + WebSockets для блокировки ячейки при редактировании ("Живой курсор").
+
+### 4. Интеллектуальный слой "Батя-контроль"
+- **Снапшоты:** Ежедневная агрегация текстовых данных в таблицу `task_snapshots`.
+- **Семантический поиск:** ИИ анализирует поле `aggregated_comments` (`[Дата][Локация][Проблема][Текст]`).
+- **Кейс:** Поиск по запросу "проблемы с датчиками в Липецке" выдает исторические причины сдвига критического пути.
+
+## 📁 Спецификация импорта Legacy данных
+- **Архив:** `ProjectArchive_20260828_134022`.
+- **Маппинг:**
+    - `План-график*.xlsx` → `portfolio_tasks`.
+    - `Дневник*.xlsx` → `operational_issues` и `diary_entries`.
+    - `鐵__1.0.14h.xlsm` → Извлечение `queryTable.xml` (кэши Power Query) в кодировке `gbk` для наполнения исторической базы.
+
+## 🛠 Технологический стек
+- **Backend:** FastAPI, SQLAlchemy 2.0, Celery.
+- **Data:** PostgreSQL 16 (pgvector), Redis 7.
+- **Frontend:** React, Tailwind CSS, SVAR/DHTMLX Gantt.
+- **AI:** LangChain, OpenAI API / DeepSeek.
