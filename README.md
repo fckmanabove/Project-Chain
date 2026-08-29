@@ -101,3 +101,4 @@ project-chain/
 - **Data:** PostgreSQL 16 (pgvector), Redis 7.
 - **Frontend:** React, Tailwind CSS, SVAR/DHTMLX Gantt.
 - **AI:** LangChain, OpenAI API / DeepSeek.
+- **Storage:** S3-совместимое хранилище (MinIO/AWS) для хранения оригиналов Excel-файлов и вложений из дневников.
