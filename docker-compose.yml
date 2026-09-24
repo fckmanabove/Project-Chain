@@ -1,0 +1,94 @@
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    container_name: prochain_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-prochain_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-prochain_secret_pass}
+      POSTGRES_DB: ${POSTGRES_DB:-prochain_db}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-prochain_user} -d ${POSTGRES_DB:-prochain_db}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - prochain_network
+
+  redis:
+    image: redis:7-alpine
+    container_name: prochain_redis
+    restart: unless-stopped
+    command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD:-redis_secret_pass}
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD:-redis_secret_pass}", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - prochain_network
+
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    container_name: prochain_backend
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      - POSTGRES_SERVER=postgres
+      - POSTGRES_PORT=5432
+      - POSTGRES_USER=${POSTGRES_USER:-prochain_user}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-prochain_secret_pass}
+      - POSTGRES_DB=${POSTGRES_DB:-prochain_db}
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - REDIS_PASSWORD=${REDIS_PASSWORD:-redis_secret_pass}
+      - SECRET_KEY=${SECRET_KEY:-super_secret_prochain_jwt_key_2026}
+      - PROJECT_DELETE_SECRET=${PROJECT_DELETE_SECRET:-prochain_root_kill_switch_2026}
+    ports:
+      - "127.0.0.1:8002:8000"
+    volumes:
+      - ./backend:/app/backend
+      - ./ai_agent:/app/ai_agent
+      - ./scripts:/app/scripts
+      - ./parser:/app/parser
+    entrypoint: ["/bin/bash", "/app/backend/docker-entrypoint.sh"]
+    command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
+    networks:
+      - prochain_network
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: prochain_frontend
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:5173:5173"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    environment:
+      - VITE_API_URL=http://localhost:8000/api/v1
+      - VITE_WS_URL=ws://localhost:8000/api/v1/ws
+    networks:
+      - prochain_network
+
+networks:
+  prochain_network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local

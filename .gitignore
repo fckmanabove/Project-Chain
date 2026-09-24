@@ -1,0 +1,77 @@
+# =============================================================================
+# Python & Virtual Environments
+# =============================================================================
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+.venv/
+backend/.venv/
+**/.venv/
+**/__pycache__/
+
+# Testing & Coverage
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+
+# =============================================================================
+# Node.js & Frontend Build Artifacts
+# =============================================================================
+node_modules/
+frontend/node_modules/
+dist/
+frontend/dist/
+dist-ssr/
+*.local
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# =============================================================================
+# Environment Secrets & Credentials (Никаких утечек ключей!)
+# =============================================================================
+.env
+.env.local
+.env.*.local
+*.pem
+*.key
+
+# =============================================================================
+# Enterprise Data & Temporary Excel Dumps
+# =============================================================================
+~$*.xlsx
+~$*.xlsm
+*.tmp
+*.xlsm
+*.xlsx
+extracted_media/
+dump_visuals.py
+inspect_excel.py
+inspect_db.py
+
+# =============================================================================
+# Helper Scripts (Прячем генераторы истории)
+# =============================================================================
+make_history.py
+*history*.py
+*seed*.py.bak
+
+# =============================================================================
+# IDE & Operating System Artifacts
+# =============================================================================
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+*.log
+docker-compose.override.yml
