@@ -1,0 +1,337 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  font-family:
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    Roboto,
+    sans-serif;
+}
+
+:root {
+  --gantt-grid-line: #334155;
+}
+
+html.dark {
+  --gantt-grid-line: #334155;
+}
+
+html.dark body {
+  background-color: #020617;
+  color: #f8fafc;
+}
+
+/* ==========================================================================
+   Светлая тема оформления Excel Clean (Максимальная чёткость и контрастность)
+   ========================================================================== */
+html.light {
+  --gantt-grid-line: #cbd5e1;
+}
+
+html.light body {
+  background-color: #f1f5f9;
+  color: #0f172a;
+}
+
+/* Белые карточки и панели */
+html.light .bg-slate-950,
+html.light [class*="bg-slate-950/"],
+html.light .bg-slate-900,
+html.light [class*="bg-slate-900/"] {
+  background-color: #ffffff !important;
+}
+
+/* Мягкий полупрозрачный фон под модальными окнами (только полноэкранные оверлеи) */
+html.light .fixed.inset-0.bg-slate-950\/80,
+html.light .fixed.inset-0[class*="bg-slate-950"] {
+  background-color: rgba(15, 23, 42, 0.45) !important;
+  backdrop-filter: blur(4px) !important;
+}
+
+/* ==========================================================================
+   Telegram Circular Reveal Transition (Анимация круговой волны)
+   ========================================================================== */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+
+::view-transition-old(root) {
+  z-index: 1;
+}
+
+::view-transition-new(root) {
+  z-index: 99999;
+}
+
+/* Отключаем задержки CSS-транзишенов при снимке, чтобы кнопки перекрашивались синхронно с кругом */
+html.theme-transitioning *,
+html.theme-transitioning *::before,
+html.theme-transitioning *::after {
+  transition: none !important;
+}
+
+/* Светло-серые шапки и подложки */
+html.light .bg-slate-850,
+html.light [class*="bg-slate-850/"],
+html.light .bg-slate-800,
+html.light [class*="bg-slate-800/"] {
+  background-color: #f8fafc !important;
+}
+
+/* Активные вкладки листов книги Excel (чёткие границы и тень возвышения) */
+html.light button.bg-slate-850,
+html.light .border-b-2.bg-slate-850 {
+  background-color: #ffffff !important;
+  border-top: 1px solid #cbd5e1 !important;
+  border-left: 1px solid #cbd5e1 !important;
+  border-right: 1px solid #cbd5e1 !important;
+  box-shadow: 0 2px 6px -1px rgba(15, 23, 42, 0.08) !important;
+}
+
+/* Сегментированные вкладки в модалках (Профиль, 2FA, Смена Email) */
+html.light .bg-slate-950\/60,
+html.light [class*="bg-slate-950/60"] {
+  background-color: #e2e8f0 !important;
+  border: 1px solid #cbd5e1 !important;
+}
+
+html.light .bg-slate-950\/60 button.bg-slate-800,
+html.light [class*="bg-slate-950/60"] button.bg-slate-800 {
+  background-color: #ffffff !important;
+  color: #0284c7 !important;
+  border: 1px solid #cbd5e1 !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1) !important;
+  font-weight: 700 !important;
+}
+
+/* Убираем чёрное наведение на вкладках и кнопках */
+html.light [class*="hover:bg-slate-900"]:hover,
+html.light [class*="hover:bg-slate-850"]:hover,
+html.light [class*="hover:bg-slate-800"]:hover {
+  background-color: #e2e8f0 !important;
+  color: #0f172a !important;
+}
+
+/* Чёткие границы таблиц */
+html.light .border-slate-800,
+html.light .border-slate-700,
+html.light [class*="border-slate-800/"],
+html.light [class*="border-slate-700/"] {
+  border-color: #cbd5e1 !important;
+}
+
+/* Высококонтрастный текст для светлого фона */
+html.light .text-slate-100,
+html.light .text-slate-200,
+html.light [class*="text-slate-100"],
+html.light [class*="text-slate-200"] {
+  color: #0f172a !important;
+}
+
+html.light .text-slate-300,
+html.light .text-slate-400,
+html.light [class*="text-slate-300"],
+html.light [class*="text-slate-400"] {
+  color: #334155 !important;
+}
+
+html.light .text-slate-500 {
+  color: #64748b !important;
+}
+
+/* Контрастные статусы и бейджи (вместо бледных пастельных тонов) */
+html.light .text-cyan-400,
+html.light .text-cyan-300,
+html.light [class*="text-cyan-"] {
+  color: #0284c7 !important; /* Глубокий синий */
+}
+
+html.light .text-amber-300,
+html.light .text-amber-400,
+html.light .text-yellow-400,
+html.light [class*="text-amber-"] {
+  color: #b45309 !important; /* Контрастный янтарный (Код 2, Предупреждения) */
+}
+
+html.light .text-rose-400,
+html.light .text-rose-300,
+html.light .text-red-400,
+html.light [class*="text-rose-"] {
+  color: #be123c !important; /* Насыщенный рубиново-красный (Срывы, Проблемы) */
+}
+
+html.light .text-purple-300,
+html.light .text-purple-400,
+html.light [class*="text-purple-"] {
+  color: #7e22ce !important; /* Глубокий фиолетовый для RTS и RACI */
+}
+
+html.light .text-emerald-400,
+html.light .text-emerald-300,
+html.light [class*="text-emerald-"] {
+  color: #047857 !important; /* Чёткий зелёный */
+}
+
+/* Подложки бейджей категорий и кнопок */
+html.light .bg-amber-500\/20,
+html.light .bg-amber-950,
+html.light [class*="bg-amber-950/"] {
+  background-color: #fef3c7 !important;
+  color: #92400e !important;
+  border-color: #fcd34d !important;
+}
+
+html.light .bg-rose-500\/20,
+html.light .bg-rose-950,
+html.light [class*="bg-rose-950/"],
+html.light .bg-rose-600\/20 {
+  background-color: #ffe4e6 !important;
+  color: #9f1239 !important;
+  border-color: #fda4af !important;
+}
+
+html.light .bg-cyan-600\/20,
+html.light .bg-cyan-950,
+html.light [class*="bg-cyan-950/"] {
+  background-color: #e0f2fe !important;
+  color: #0369a1 !important;
+  border-color: #7dd3fc !important;
+}
+
+/* Высококонтрастные бейджи CPM и синие индикаторы */
+html.light .bg-blue-500\/20,
+html.light .bg-blue-950,
+html.light [class*="bg-blue-950/"],
+html.light [class*="bg-blue-500/"] {
+  background-color: #dbeafe !important;
+  color: #1e40af !important;
+  border-color: #93c5fd !important;
+}
+
+html.light .text-blue-300,
+html.light .text-blue-400,
+html.light [class*="text-blue-"] {
+  color: #1d4ed8 !important;
+  font-weight: 700 !important;
+}
+
+html.light .bg-purple-950,
+html.light [class*="bg-purple-950/"],
+html.light .bg-purple-900,
+html.light [class*="bg-purple-900/"],
+html.light .bg-purple-600\/20 {
+  background-color: #f3e8ff !important;
+  color: #6b21a8 !important;
+  border-color: #d8b4fe !important;
+  font-weight: 700 !important;
+}
+
+html.light .bg-emerald-950,
+html.light [class*="bg-emerald-950/"] {
+  background-color: #d1fae5 !important;
+  color: #065f46 !important;
+  border-color: #6ee7b7 !important;
+}
+
+/* Плашка ключа 2FA TOTP */
+html.light .select-all {
+  background-color: #f1f5f9 !important;
+  color: #0369a1 !important;
+  border: 1px solid #cbd5e1 !important;
+}
+
+/* Floating HUD пульт на светлой теме */
+html.light aside[aria-label="Панель навигации Ганта"] {
+  background-color: #ffffff !important;
+  border-color: #cbd5e1 !important;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1) !important;
+}
+
+html.light input,
+html.light select,
+html.light textarea {
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+  border-color: #cbd5e1 !important;
+}
+
+html.light ::-webkit-scrollbar-track {
+  background: #f1f5f9;
+}
+
+html.light ::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-color: #94a3b8;
+}
+
+/* ==========================================================================
+   Адаптивная система скроллбаров (Тёмная и Светлая темы)
+   ========================================================================== */
+
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+/* Тёмная тема */
+html.dark *::-webkit-scrollbar-track,
+html.dark::-webkit-scrollbar-track,
+::-webkit-scrollbar-track {
+  background: #090d16;
+  border-radius: 4px;
+}
+
+html.dark *::-webkit-scrollbar-thumb,
+html.dark::-webkit-scrollbar-thumb,
+::-webkit-scrollbar-thumb {
+  background: #1e293b;
+  border-radius: 4px;
+  border: 1px solid #334155;
+}
+
+html.dark *::-webkit-scrollbar-thumb:hover,
+::-webkit-scrollbar-thumb:hover {
+  background: #0ea5e9;
+  border-color: #38bdf8;
+}
+
+/* Светлая тема Excel Clean */
+html.light *::-webkit-scrollbar-track,
+html.light::-webkit-scrollbar-track {
+  background: #e2e8f0 !important;
+  border-radius: 4px;
+}
+
+html.light *::-webkit-scrollbar-thumb,
+html.light::-webkit-scrollbar-thumb {
+  background: #cbd5e1 !important;
+  border: 1px solid #94a3b8 !important;
+  border-radius: 4px;
+}
+
+html.light *::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8 !important;
+  border-color: #64748b !important;
+}
+
+html.light *::-webkit-scrollbar-corner {
+  background: #e2e8f0 !important;
+}
+
+html.dark * {
+  scrollbar-width: thin;
+  scrollbar-color: #1e293b #090d16;
+}
+
+html.light * {
+  scrollbar-width: thin;
+  scrollbar-color: #cbd5e1 #e2e8f0;
+}
