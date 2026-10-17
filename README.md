@@ -1,5 +1,17 @@
 # ⚡ Project-Chain (ProChain)
 
+<p align="center">
+  <a href="https://prochain.duckdns.org">
+    <img src="https://img.shields.io/badge/Live_Demo-prochain.duckdns.org-0284c7?style=for-the-badge&logo=googlechrome&logoColor=white" alt="Live Demo" />
+  </a>
+  <img src="https://img.shields.io/badge/Status-Online-emerald?style=for-the-badge" alt="Status" />
+  <img src="https://img.shields.io/badge/Docker-Ready-2496ED?style=for-the-badge&logo=docker&logoColor=white" alt="Docker" />
+  <img src="https://img.shields.io/badge/License-MIT-slate?style=for-the-badge" alt="License" />
+</p>
+
+> **🌐 Рабочий стенд (Production):** [https://prochain.duckdns.org](https://prochain.duckdns.org)  
+> *(В форму входа встроена кнопка «⚡ Демо-вход в 1 клик» с правами SuperAdmin и авто-запуском интерактивного квеста).*
+
 > **B2B-платформа календарно-сетевого планирования и управления портфелем проектов автоматизации промышленных предприятий.**  
 > Высоконагруженная замена 100+ Мб legacy-книг Excel (`.xlsm`) с собственным математическим ядром расчёта критического пути (CPM), распределёнными блокировками (Redis Live Locks), аудитом Time Machine и векторным поиском инцидентов (pgvector).
 
