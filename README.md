@@ -25,26 +25,26 @@
 
 | 🌙 Industrial Dark | ☀️ Excel Clean (Светлая тема) |
 | :---: | :---: |
-| <img src="docs/screenshots/01_gantt_dark.png" width="100%" alt="Gantt Industrial Dark" /> | <img src="docs/screenshots/01_gantt_light.png" width="100%" alt="Gantt Excel Clean" /> |
+| <img src="docs/01_gantt_dark.jpg" width="100%" alt="Gantt Industrial Dark" /> | <img src="docs/01_gantt_light.jpg" width="100%" alt="Gantt Excel Clean" /> |
 
 <p><i>Двухъярусная календарная шкала с непрерывной сеткой дней, дашборд здоровья портфеля по правилам PCC 1.5, ресайз колонок таблицы и круговая Telegram-style анимация переключения тем (View Transitions API).</i></p>
 
 <br/>
 
 ### 2. Карточка задачи и распределённый Redis Live Lock
-<img src="docs/screenshots/02_task_drawer_lock.png" alt="Task Drawer and Redis Live Lock" width="100%" />
+<img src="docs/02_task_drawer_lock.jpg" alt="Task Drawer and Redis Live Lock" width="100%" />
 <p><i>Атомарный захват строки через Lua-скрипт (30s TTL + heartbeat), управление связями CPM (FS/SS/FF), задачным RACI и интеграцией с Pyrus.</i></p>
 
 <br/>
 
 ### 3. Цеховой журнал производства работ (11 колонок)
-<img src="docs/screenshots/03_production_diary.png" alt="11-Column Production Diary" width="100%" />
+<img src="docs/03_production_diary.jpg" alt="11-Column Production Diary" width="100%" />
 <p><i>Фиксация полевых инцидентов по категориям A/B/C, участкам производственных линий, с инженерным обоснованием решений («Зачем все это?»).</i></p>
 
 <br/>
 
 ### 4. Двусторонний Excel-мост со Staged Diff Preview
-<img src="docs/screenshots/04_excel_bridge_diff.png" alt="Universal Excel Bridge Diff" width="100%" />
+<img src="docs/04_excel_bridge_diff.jpg" alt="Universal Excel Bridge Diff" width="100%" />
 <p><i>Автоматический расчёт дельты изменений входящего файла Excel против PostgreSQL с выборочным утверждением через нативные iOS-тумблеры.</i></p>
 
 </div>
